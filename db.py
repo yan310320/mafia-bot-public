@@ -8,7 +8,8 @@ cur = con.cursor()
 def insert_player(player_id, username):
     con = sqlite3.connect('db.db')
     cur = con.cursor()
-    sql = f'INSERT INTO(player_id, username) VALUES("{player_id}", "{username}")'
+    sql = f'INSERT INTO(player_id, username) VALUES("{
+        player_id}", "{username}")'
     con.commit()
     con.close()
 
@@ -81,8 +82,8 @@ def get_players_roles():
 def vote(type, username, player_id):
     con = sqlite3.connect('db.db')
     cur = con.cursor()
-    cur.execute(f'''SELECT username 
-                    FROM players 
+    cur.execute(f'''SELECT username
+                    FROM players
                     WHERE player_id = {player_id}
                     AND dead = 0
                     AND voted = 0''')
@@ -104,6 +105,7 @@ def vote(type, username, player_id):
     con.close
     return True
 
+
 def mafia_kill():
     con = sqlite3.connect("db.db")
     cur = con.cursor()
@@ -111,14 +113,14 @@ def mafia_kill():
         f'''SELECT MAX(mafia_vote)
             FROM players'''
     )
-    max_votes = cur.fetchone() [0]
+    max_votes = cur.fetchone()[0]
     cur.execute(
         f'''SELECT COUNT(*)
             FROM players
             WHERE role = "mafia"
             AND dead = 0'''
     )
-    mafia_alive = cur.fetchone() [0]
+    mafia_alive = cur.fetchone()[0]
 
     if (max_votes == mafia_alive):
         cur.execute(
@@ -126,7 +128,7 @@ def mafia_kill():
                 FROM players
                 WHERE mafia_vote = {max_votes}'''
         )
-        username_killed = cur.fetchone() [0]
+        username_killed = cur.fetchone()[0]
         cur.execute(
             f'''UPDATE players
                 SET dead = 1
@@ -135,6 +137,7 @@ def mafia_kill():
         con.commit()
     con.close()
     return username_killed
+
 
 def citizens_kill():
     con = sqlite3.connect('db.db')
@@ -146,21 +149,29 @@ def citizens_kill():
     max_votes = cur.fetchone()[0]
     cur.execute(f'''
                     SELECT COUNT(*)
-                    WHERE citizen_vote = max_votes
+                    WHERE citizen_vote = {max_votes}
                     FROM players
                  ''')
     max_votes_count = cur.fetchone()[0]
+    username_killed = 'никого'
     # проверяем, что только 1 человек с макс. кол-вом голосов
-    cur.execute(f'''
-                    SELECT username
-                    WHERE citizen_vote = max_votes
-                    FROM player
-                 ''')
-    username_killed = cur.fetchone()[0]
+    if max_votes_count == 1:
+        cur.execute(f'''
+                        SELECT username
+                        WHERE citizen_vote = {max_votes}
+                        FROM player
+                    ''')
+        username_killed = cur.fetchone()[0]
         # обновляем по полученному нику столбец dead на 1
+        cur.execute(
+            f"UPDATE players SET dead = 1 WHERE username = '{username_killed}' ")
         # сохраняем изменения
+        con.commit()
     # отключаемся от бд
+    con.close()
     # возвращаем ник изгнанного человека
+    return username_killed
+
 
 def clear(dead=False):
     con = sqlite3.connect("db.db")
@@ -177,6 +188,7 @@ def clear(dead=False):
     con.commit()
     con.close()
 
+
 def check_winner():
     con = sqlite3.connect("db.db")
     cur = con.cursor()
@@ -191,4 +203,3 @@ def check_winner():
         return 'Мафия'
     elif mafia_alive == 0:
         return 'Мирные жители'
-    
